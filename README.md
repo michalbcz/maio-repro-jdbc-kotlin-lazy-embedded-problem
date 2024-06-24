@@ -1,3 +1,7 @@
+# Useful links
+ * About Spring Data Relational library used here and it's kotlin support: https://docs.spring.io/spring-data/relational/reference/object-mapping.html#mapping.kotlin
+ * Nice article about Kotlin delegation strategies and how it works: https://medium.com/til-kotlin/how-kotlins-delegated-properties-and-lazy-initialization-work-552cbad8be60
+
 # Problem
 
 ```
@@ -87,3 +91,69 @@ DELETE FROM "LAZY" WHERE "LAZY"."MY_ENTITY" IS NOT NULL [42102-224]
 	... 48 more
 
 ```
+
+# ChatGPT 4o stance 
+I was just curious, but it seems right to me.
+
+**Response 23.6.2024**:
+
+Spring Data Relational doesn't support lazy initialization directly on entity properties because it interferes with how the framework initializes and manages entities. Lazy properties in Kotlin use a delegate that Spring Data Relational cannot handle properly.
+
+To resolve this, you should remove the `by lazy` delegate for fields that are part of the entity. Instead, you can initialize them directly or use other strategies that don't interfere with the entity lifecycle management.
+
+Here’s how you can adjust the class to avoid the lazy initialization issue:
+
+1. **Remove the Lazy Initialization**:
+   - Initialize the property directly or calculate it within a method if it depends on other properties.
+
+Here's a modified version of the `Money` class:
+
+```kotlin
+import org.springframework.data.annotation.Id
+import org.springframework.data.relational.core.mapping.Table
+
+@Table("money") // Maps the class to the "money" table in the database
+data class Money(
+    @Id
+    val id: Long? = null, // ID property for the entity
+
+    var amount: Int = 0,
+    var currency: String = ""
+) {
+    // Remove the lazy property, initialize it directly if needed
+    val foo: Int = 123
+}
+```
+
+### Explanation of Changes:
+
+1. **Spring Data Relational Annotations**:
+   - Use `@Table` from Spring Data Relational instead of `@Entity` for JPA.
+   - Use `@Id` from Spring Data Relational to denote the primary key.
+
+2. **Initialization of `foo`**:
+   - Instead of using lazy initialization, directly initialize `foo` with the value `123`.
+
+### Additional Note:
+
+If the value of `foo` is derived from other properties and needs to be calculated dynamically, you can use a method or a custom getter instead:
+
+```kotlin
+import org.springframework.data.annotation.Id
+import org.springframework.data.relational.core.mapping.Table
+
+@Table("money")
+data class Money(
+    @Id
+    val id: Long? = null,
+
+    var amount: Int = 0,
+    var currency: String = ""
+) {
+    // Custom getter for derived property
+    val foo: Int
+        get() = 123 // Replace this with the actual computation if needed
+}
+```
+
+With these changes, your `Money` class should work correctly with Spring Data Relational without causing exceptions related to the lazy field.
